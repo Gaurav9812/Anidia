@@ -1,0 +1,60 @@
+<section
+    style="
+        background: url('https://images.pexels.com/photos/1287142/pexels-photo-1287142.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+        min-height: 90vh;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: cover;
+        background-position-x: center;
+    "
+>
+    <Section>
+        <div class="d-flex justify-content-center">
+            <div class="w-50">
+                <h1>Posts</h1>
+                <% if(locals.user){ %>
+                <form method="post" action="/post/create">
+                    <div class="form-floating mb-2">
+                        <textarea
+                            class="form-control"
+                            name="content"
+                            cols="30"
+                            rows="5"
+                            placeholder="Type Here...."
+                            id="floatingTextarea2"
+                            style="height: 100px"
+                        ></textarea>
+                        <label for="floatingTextarea2">Post</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Post</button>
+                </form>
+                <% } %>
+                <div>
+                    <% posts.forEach(function(post){ %>
+                         <%- include('post.ejs',{ post:post }) %>
+                         <%})  %>
+                </div>
+            </div>
+        </div>
+    </Section>
+    <Section> </Section>
+</section>
+<script>
+    $('.options-post').click(function(e){
+            console.log($(this));
+            let id='more-options-post-'+$(this).data("id");
+            $(`#${id}`).toggle();
+            }
+          
+    );
+    $('.options-comment').click(function(e){
+            console.log($(this));
+            let id='more-options-comment-'+$(this).data("id");
+            $(`#${id}`).toggle();
+            }
+          
+    );
+    $(`.list-post`).toggle();
+    $(`.list-comment`).toggle();
+
+</script>

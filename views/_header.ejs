@@ -1,0 +1,26 @@
+<nav class="navbar navbar-dark bg-dark" style="height: 10vh;">
+  <div class="container-fluid  d-flex justify-content-between">
+    <a class="navbar-brand fw-bold" href="#">G-Book</a>
+    <% if(!locals.user) { %>
+      <div >
+        <a class="active text-light me-3 fw-bold" aria-current="page" href="/user/login"
+          >Signin</a
+        >
+        <a class="active text-light me-3 fw-bold" aria-current="page" href="/user/signup"
+          >Signup</a
+        >
+        <% } else { %>
+          <span>
+          <a class="active text-light me-3 fw-bold" aria-current="page" href="/profile"
+          >Profile</a>
+
+
+          <a class="active text-light me-3 fw-bold" aria-current="page" href="/user/destroy-session"
+          >Logout</a
+        ></span>
+       <% } %>
+        
+      </div>
+    </div>
+  </div>
+</nav>
