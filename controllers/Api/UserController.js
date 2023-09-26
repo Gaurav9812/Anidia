@@ -1,6 +1,6 @@
 const Crypto = require("crypto-js");
 const { Passport } = require("passport");
-const User = require("../models/user");
+const User = require("../../models/user");
 module.exports.signUp = function (req, res) {
     if (req.isAuthenticated()) {
         return res.redirect("/");
@@ -21,13 +21,17 @@ module.exports.createUser = async function (req, res) {
         firstName,
         lastName,
         dob,
+        day,
+        month,
+        year,
         email,
         password,
         confirmPassword,
         username
     } = req.body;
-    console.log(req.body);
-    return;
+    // console.log("BODY ", req.body);
+    // return;
+    let dobR = new Date(`${year}-${month}-${day}`);
     if (password === confirmPassword) {
         try {
             let passwordHash = Crypto.SHA256(password);
@@ -38,19 +42,23 @@ module.exports.createUser = async function (req, res) {
                 },
                 email: email,
                 username: username,
-                dateOfBirth: dob,
+                dateOfBirth: dob ? dob : dobR,
                 passwordHash: passwordHash
             });
             if (user) {
-                return res.json(200, {
+                return res.status(200).json({
                     message: "User created successfully"
+                });
+            } else {
+                return res.status(409).json({
+                    message: "User with same email and username Alredy Exist!"
                 });
             }
         } catch (err) {
-            return res.json(500, { message: err });
+            return res.status(500).json({ message: err.message });
         }
     }
-    return res.json(500, {
+    return res.status(400).json({
         message: "Password and confirm password are not same"
     });
 };
