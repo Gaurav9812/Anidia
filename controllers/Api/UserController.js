@@ -1,6 +1,7 @@
 const Crypto = require("crypto-js");
-const { Passport } = require("passport");
+const { Passport, use } = require("passport");
 const User = require("../../models/user");
+const jwt = require('jsonwebtoken');
 module.exports.signUp = function (req, res) {
     if (req.isAuthenticated()) {
         return res.redirect("/");
@@ -35,6 +36,7 @@ module.exports.createUser = async function (req, res) {
     if (password === confirmPassword) {
         try {
             let passwordHash = Crypto.SHA256(password);
+            
             let user = await User.create({
                 name: {
                     firstName: firstName,
@@ -63,10 +65,29 @@ module.exports.createUser = async function (req, res) {
     });
 };
 
-module.exports.createSession = function (req, res) {
-    req.flash("info", "Logged in successfully");
-
-    return res.redirect("/");
+module.exports.createSession = async function (req, res) {
+   
+        const {
+            username,password
+          } = req.body;
+          console.log(username,password);
+          if(username && password){
+              let user = await User.findOne({username:username});
+              if(user){
+              let passwordHash = Crypto.SHA256(password);
+                if(user.passwordHash == passwordHash){
+                    return res.status(200).json({
+                        token:jwt.sign(user.id,'authentication',{algorithm:'HS256'}),
+                        message:"login Successfull!"
+                    });
+                }
+              }
+          }
+          return res.status(402).json({
+            message:"Incorrect username or password!"
+        });
+  
+    
 };
 
 module.exports.destroySession = function (req, res) {
