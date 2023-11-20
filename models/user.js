@@ -1,16 +1,23 @@
 const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
+const MANUAL="MANUAL";
+const GOOGLE="GOOGLE";
+
 const userSchema = new mongoose.Schema(
     {
         name: {
             firstName: {
                 type: String,
-                required: true
+                 required: function(){
+                    this.signUpFrom == MANUAL
+                }
             },
             lastName: {
                 type: String,
-                required: true
+                required: function(){
+                    this.signUpFrom == MANUAL
+                }
             }
         },
         username: {
@@ -20,19 +27,34 @@ const userSchema = new mongoose.Schema(
         },
         dateOfBirth: {
             type: Date,
-            required: true
+            required: function(){
+                this.signUpFrom == MANUAL
+            }
         },
         email: {
             type: String,
             required: true,
             unique: true
         },
+        emailVerified: {
+            type: Boolean,
+            default:false
+        },
+        socialMediaUniqueId: {
+            type: String,
+        },
         passwordHash: {
             type: String,
-            required: true
+            required: function(){
+                this.signUpFrom == MANUAL
+            }
         },
         avtar: {
             type: String
+        },
+        signUpFrom :{
+            type: String,
+            enum:['MANUAL','GOOGLE']
         }
     },
     {
@@ -53,3 +75,6 @@ userSchema.statics.storage = multer.diskStorage({
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;
+module.exports.MANUAL = MANUAL;
+
+module.exports.GOOGLE = GOOGLE ;
