@@ -53,9 +53,9 @@ module.exports.logIn = async function (req, res) {
        });
 
        if(user){
-        let jwtToken =await jwt.sign(user.id, "authentication", {
+        let jwtToken = jwt.sign({id:user.id}, "authentication", {
             algorithm: "HS256",
-            expiresIn:60*60
+            expiresIn: 60*60
         });
         console.error(user);
             return res.status(200).json({
@@ -65,7 +65,7 @@ module.exports.logIn = async function (req, res) {
             });
        }
     }else{
-        let jwtToken = jwt.sign(user.id, "authentication", {
+        let jwtToken = jwt.sign({id:user.id}, "authentication", {
             algorithm: "HS256",
             expiresIn:60*60
             
@@ -89,9 +89,13 @@ module.exports.logIn = async function (req, res) {
 module.exports.createSessionUsingToken=async (req,res)=>{
     let token = req.params.token;
     if(token){
-        let decoded = jwt.verify(token,"authentication");
+        
         try {
-            let user = await User.findById(decoded).exec();
+            let decoded = jwt.verify(token,"authentication",{
+                algorithm: "HS256",
+            });
+            if(decoded){
+            let user = await User.findById(decoded.id).exec();
             if(user){
             return res.status(200).json({
                 status:200,
@@ -99,14 +103,13 @@ module.exports.createSessionUsingToken=async (req,res)=>{
                 user:user,
                 token:token,
             });  
-         }else{
+         }
+        }
             return res.status(200).json({
                 status:201,
                 message:"logged in",
-                user:user,
-                token:token,
             }); 
-         }
+         
         }catch(err){
             return res.status(500).json({
                 message:err.message
@@ -177,7 +180,7 @@ module.exports.createSession = async function (req, res) {
             let passwordHash = Crypto.SHA256(password);
             if (user.passwordHash == passwordHash) {
                 return res.status(200).json({
-                    token: jwt.sign(user.id, "authentication", {
+                    token: jwt.sign({id:user.id}, "authentication", {
                         algorithm: "HS256",
                         expiresIn:60*60
                     }),
