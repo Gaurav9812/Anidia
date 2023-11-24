@@ -3,7 +3,7 @@ const { Passport, use } = require("passport");
 const User = require("../../models/user");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
-
+const transporter = require('../../config/nodemailer-config');
 
 module.exports.signUp = function (req, res) {
     if (req.isAuthenticated()) {
@@ -152,6 +152,14 @@ module.exports.createUser = async function (req, res) {
                 signUpFrom:User.MANUAL
             });
             if (user) {
+                const info = await transporter.sendMail({
+                    from: 'gauravmehra1298gmail.com', // sender address
+                    to: email, // list of receivers
+                    subject: "EMAIL VERIFICATION", // Subject line
+                    text: "Please click on the given link to verify you email address.", // plain text body
+                    html: "<b>Please click on the given link to verify you email address.</b>", // html body
+                  });
+                  console.log(info);
                 return res.status(200).json({
                     message: "User created successfully",
                     

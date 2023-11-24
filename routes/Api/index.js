@@ -18,7 +18,9 @@ ROUTER.get('/auth/google',
     res.redirect('/');
   });
 
-// ROUTER.use("/post", require("./post"));
+ 
+
+  // ROUTER.use("/post", require("./post"));
 
 // ROUTER.use("/comment", require("./comment"));
 
