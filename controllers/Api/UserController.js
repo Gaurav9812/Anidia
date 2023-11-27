@@ -3,7 +3,8 @@ const { Passport, use } = require("passport");
 const User = require("../../models/user");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
-const transporter = require('../../config/nodemailer-config');
+const transporter = require("../../config/nodemailer-config");
+const CryptoN = require("crypto");
 
 module.exports.signUp = function (req, res) {
     if (req.isAuthenticated()) {
@@ -30,93 +31,92 @@ module.exports.logIn = async function (req, res) {
     const token = req.body;
     try {
         const payload = await verify(token);
-       
+
         const {
-            email,email_verified ,name,given_name:first_name,family_name,picture,sup : id
+            email,
+            email_verified,
+            name,
+            given_name: first_name,
+            family_name,
+            picture,
+            sup: id
+        } = payload;
 
-       } = payload;
-
-       let user =  await User.findOne({email:email}).exec();
-       if(!user){
-        user = await User.create({
-        username:email,
-        name: {
-            firstName:first_name,
-            lastName:family_name,
-        },
-        avtar:picture,
-        socialMediaUniqueId:id,
-        emailVerified:true,
-        email:email,
-        signUpFrom:User.GOOGLE
-        
-       });
-
-       if(user){
-        let jwtToken = jwt.sign({id:user.id}, "authentication", {
-            algorithm: "HS256",
-            expiresIn: 60*60
-        });
-        console.error(user);
-            return res.status(200).json({
-                message:"User Added",
-                user:user    ,
-                token: jwtToken
+        let user = await User.findOne({ email: email }).exec();
+        if (!user) {
+            user = await User.create({
+                username: email,
+                name: {
+                    firstName: first_name,
+                    lastName: family_name
+                },
+                avtar: picture,
+                socialMediaUniqueId: id,
+                emailVerified: true,
+                email: email,
+                signUpFrom: User.GOOGLE
             });
-       }
-    }else{
-        let jwtToken = jwt.sign({id:user.id}, "authentication", {
-            algorithm: "HS256",
-            expiresIn:60*60
-            
-        });
-        return res.status(200).json({
-            token: jwtToken,    
-            message:"User Added",
-            user:user,
-        });
-    }
 
+            if (user) {
+                let jwtToken = jwt.sign({ id: user.id }, "authentication", {
+                    algorithm: "HS256",
+                    expiresIn: 60 * 60
+                });
+                console.error(user);
+                return res.status(200).json({
+                    message: "User Added",
+                    user: user,
+                    token: jwtToken
+                });
+            }
+        } else {
+            let jwtToken = jwt.sign({ id: user.id }, "authentication", {
+                algorithm: "HS256",
+                expiresIn: 60 * 60
+            });
+            return res.status(200).json({
+                token: jwtToken,
+                message: "User Added",
+                user: user
+            });
+        }
     } catch (err) {
         console.log(err);
         return res.status(500).json({
-            message:err.message, 
-
+            message: err.message
         });
     }
 };
 
-module.exports.createSessionUsingToken=async (req,res)=>{
+module.exports.createSessionUsingToken = async (req, res) => {
     let token = req.params.token;
-    if(token){
-        
+    if (token) {
         try {
-            let decoded = jwt.verify(token,"authentication",{
-                algorithm: "HS256",
+            let decoded = jwt.verify(token, "authentication", {
+                algorithm: "HS256"
             });
-            if(decoded){
-            let user = await User.findById(decoded.id).exec();
-            if(user){
+            if (decoded) {
+                let user = await User.findById(decoded.id).exec();
+                if (user) {
+                    return res.status(200).json({
+                        status: 200,
+                        message: "logged in",
+                        user: user,
+                        token: token
+                    });
+                }
+            }
             return res.status(200).json({
-                status:200,
-                message:"logged in",
-                user:user,
-                token:token,
-            });  
-         }
-        }
-            return res.status(200).json({
-                status:201,
-                message:"logged in",
-            }); 
-         
-        }catch(err){
+                status: 201,
+                message: "logged in"
+            });
+        } catch (err) {
             return res.status(500).json({
-                message:err.message
-            });     
+                message: err.message
+            });
         }
     }
-}
+};
 
 module.exports.getUser = async function (req, res) {};
 
@@ -140,6 +140,9 @@ module.exports.createUser = async function (req, res) {
         try {
             let passwordHash = Crypto.SHA256(password);
 
+            const hash = CryptoN.createHmac("sha256", process.env.CRYPTO_SECRET)
+                .update(username)
+                .digest("hex");
             let user = await User.create({
                 name: {
                     firstName: firstName,
@@ -149,20 +152,22 @@ module.exports.createUser = async function (req, res) {
                 username: username,
                 dateOfBirth: dob ? dob : dobR,
                 passwordHash: passwordHash,
-                signUpFrom:User.MANUAL
+                signUpFrom: User.MANUAL,
+                randomHash: hash
             });
             if (user) {
+                let redirectUri =
+                    process.env.FRONTEND_URL + "/verify-email/" + hash;
                 const info = await transporter.sendMail({
-                    from: 'gauravmehra1298gmail.com', // sender address
+                    from: "gauravmehra1298gmail.com", // sender address
                     to: email, // list of receivers
                     subject: "EMAIL VERIFICATION", // Subject line
                     text: "Please click on the given link to verify you email address.", // plain text body
-                    html: "<b>Please click on the given link to verify you email address.</b>", // html body
-                  });
-                  console.log(info);
+                    html: `<b>Please click on the given <a href='${redirectUri}'> link</a> to verify you email address.</b>` // html body
+                });
+                console.log(info);
                 return res.status(200).json({
-                    message: "User created successfully",
-                    
+                    message: "User created successfully"
                 });
             } else {
                 return res.status(409).json({
@@ -180,20 +185,31 @@ module.exports.createUser = async function (req, res) {
 
 module.exports.createSession = async function (req, res) {
     const { username, password } = req.body;
-    console.log(username, password);
+    // console.log(username, password);
     if (username && password) {
-        let user = await User.findOne({ username: username });
+        let user = await User.findOne()
+            .or([{ username: username }, { email: username }])
+            .exec();
         if (user) {
-            console.log(user);
-            let passwordHash = Crypto.SHA256(password);
-            if (user.passwordHash == passwordHash) {
+            if (user.signUpFrom == User.MANUAL) {
+                // console.log(user);
+                let passwordHash = Crypto.SHA256(password);
+                // console.log(passwordHash);
+                if (user.passwordHash == passwordHash) {
+                    return res.status(200).json({
+                        status: 200,
+                        token: jwt.sign({ id: user.id }, "authentication", {
+                            algorithm: "HS256",
+                            expiresIn: 60 * 60
+                        }),
+                        message: "login Successfull!",
+                        user: user
+                    });
+                }
+            } else {
                 return res.status(200).json({
-                    token: jwt.sign({id:user.id}, "authentication", {
-                        algorithm: "HS256",
-                        expiresIn:60*60
-                    }),
-                    message: "login Successfull!",
-                    user: user
+                    status: 201,
+                    message: `Loooks like you are logined from ${user.signUpFrom}!`
                 });
             }
         }
@@ -212,3 +228,81 @@ module.exports.destroySession = function (req, res) {
         res.redirect("/");
     });
 };
+
+module.exports.verifyEmail = async function (req, res) {
+    let hash = req.params.hash;
+    try {
+        let user = await User.findOne({ randomHash: hash }).exec();
+        if (user) {
+            if (user.emailVerified) {
+                return res
+                .status(200)
+                .json({ message: "Your Email is already been verified!" });
+            }
+            if(user.signUpFrom != User.MANUAL){
+                return res
+                .status(200)
+                .json({ message: `Looks Like your email is registered through ${user.signUpFrom}!` });
+        
+            }
+                user.randomHash = "";
+                user.emailVerified = true;
+                if (user.save()) {
+                    return res
+                        .status(200)
+                        .json({ message: "Email Verified please login!" });
+                } else {
+                    return res
+                        .status(200)
+                        .json({ message: user.errors.toString() });
+                }
+            }
+        return res
+            .status(200)
+            .json({ message: "Not found please try again later!" });
+    } catch (err) {
+        return res.status(200).json({ message: err.message });
+    }
+};
+
+module.exports.forgotPassword = async function(req,res){
+        const {email} = req.body;
+        try{
+                let user = await User.findOne({email:email}).exec();
+                if(user){
+                    if(user.signUpFrom != User.MANUAL){
+                        return res
+                        .status(200)
+                        .json({ message: `Looks Like your email is registered through ${user.signUpFrom}!` });
+                
+                    }
+
+                const hash = CryptoN.createHmac("sha256", process.env.CRYPTO_SECRET)
+                .update(user.email)
+                .digest("hex");
+
+                    const redirectUri = process.env.FRONTEND_URL + "/reset-password/" + hash;
+
+                    const info = await transporter.sendMail({
+                        from: "gauravmehra1298gmail.com", // sender address
+                        to: email, // list of receivers
+                        subject: "Reset Password", // Subject line
+                        text: "Please click on the given link to verify you email address.", // plain text body
+                        html: `<b>Please click on the given <a href='${redirectUri}'> link</a> to verify reset your password.</b>` // html body
+                    });
+
+                    return res
+                    .status(200)
+                    .json({ status:200,message: 'Password reset mail is send to your provided email!' });
+                
+                }else{
+                    return res
+                    .status(200)
+                    .json({ status:201,message: 'No user is registerd with this email!' });
+                
+                }
+        }catch(err){
+            console.log(err);
+        return res.status(200).json({status:500 ,message: err.message });
+        }
+}

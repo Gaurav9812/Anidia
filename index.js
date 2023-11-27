@@ -20,7 +20,6 @@ app.use(express.static("./assets"));
 app.use(cookieParser());
 app.use(expressLayouts);
 app.use(cors());
-console.log(process.env);
 
 app.set("layout extractStyles", true);
 app.set("layout extractScripts", true);

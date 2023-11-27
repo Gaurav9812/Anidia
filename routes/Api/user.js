@@ -12,6 +12,9 @@ ROUTER.get("/login/:token", UserController.createSessionUsingToken);
 
 ROUTER.get("/signup", UserController.signUp);
 
+ROUTER.get('/verify-email/:hash',UserController.verifyEmail);
+
+ROUTER.post('/forgot-password',UserController.forgotPassword);
 
 ROUTER.get('/get-user',passport.authenticate('jwt',{session:false}),UserController.getUser)
 //Create User

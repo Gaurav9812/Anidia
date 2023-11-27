@@ -55,6 +55,9 @@ const userSchema = new mongoose.Schema(
         signUpFrom :{
             type: String,
             enum:['MANUAL','GOOGLE']
+        },
+        randomHash:{
+            type:String,
         }
     },
     {
