@@ -6,6 +6,7 @@ const { OAuth2Client } = require("google-auth-library");
 const transporter = require("../../config/nodemailer-config");
 const CryptoN = require("crypto");
 
+
 module.exports.signUp = function (req, res) {
     if (req.isAuthenticated()) {
         return res.redirect("/");
@@ -277,9 +278,7 @@ module.exports.forgotPassword = async function(req,res){
                 
                     }
 
-                const hash = CryptoN.createHmac("sha256", process.env.CRYPTO_SECRET)
-                .update(user.email)
-                .digest("hex");
+                const hash = Crypto.AES.encrypt(user.id,process.env.CRYPTO_SECRET);
 
                     const redirectUri = process.env.FRONTEND_URL + "/reset-password/" + hash;
 
@@ -305,4 +304,43 @@ module.exports.forgotPassword = async function(req,res){
             console.log(err);
         return res.status(200).json({status:500 ,message: err.message });
         }
+
+
+
+}
+
+
+module.exports.resetPassword = async function(req,res){
+    const encryptedId = req.params.hash;
+    const {password,confirmPassword} = req.body;
+    try{
+        const decryptedId = Crypto.AES.decrypt(hash,process.env.CRYPTO_SECRET);
+
+            let user = await User.findOne(decryptedId).exec();
+            if(user){
+                if(password != confirmPassword){
+                    return res
+                    .status(200)
+                    .json({ status:201,message: 'Password and confirm password must be same!' });
+                }
+                let passwordHash = Crypto.SHA256(password);
+               let user = user.update({
+                    password:passwordHash,
+                }).exec();
+                if(user){
+                    return res
+                    .status(200)
+                    .json({ status:200,message: 'Password reseted successfully!' });
+                }
+                
+            }
+                return res
+                .status(200)
+                .json({ status:201,message: 'Something went wrong please try again after some time!' });
+            
+            
+    }catch(err){
+        console.log(err);
+    return res.status(200).json({status:500 ,message: err.message });
+    }
 }

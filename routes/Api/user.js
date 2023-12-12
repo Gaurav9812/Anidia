@@ -16,6 +16,8 @@ ROUTER.get('/verify-email/:hash',UserController.verifyEmail);
 
 ROUTER.post('/forgot-password',UserController.forgotPassword);
 
+ROUTER.get('/reset-password/:hash',UserController.resetPassword);
+
 ROUTER.get('/get-user',passport.authenticate('jwt',{session:false}),UserController.getUser)
 //Create User
 ROUTER.post("/create-user", UserController.createUser);
