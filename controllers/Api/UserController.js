@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const transporter = require("../../config/nodemailer-config");
 const CryptoN = require("crypto");
+const { utimes } = require("fs");
 
 
 module.exports.signUp = function (req, res) {
@@ -186,7 +187,6 @@ module.exports.createUser = async function (req, res) {
 
 module.exports.createSession = async function (req, res) {
     const { username, password } = req.body;
-    // console.log(username, password);
     if (username && password) {
         let user = await User.findOne()
             .or([{ username: username }, { email: username }])
@@ -278,9 +278,16 @@ module.exports.forgotPassword = async function(req,res){
                 
                     }
 
-                const hash = Crypto.AES.encrypt(user.id,process.env.CRYPTO_SECRET);
-
-                    const redirectUri = process.env.FRONTEND_URL + "/reset-password/" + hash;
+                    const token = await user.generateResetToken();
+                    
+                    user = await user.save();
+                    if(!(user)){
+                        return res
+                        .status(200)
+                        .json({ message: `unable to store data `});
+                
+                    }
+                    const redirectUri = process.env.FRONTEND_URL + "/reset-password/" + token;
 
                     const info = await transporter.sendMail({
                         from: "gauravmehra1298gmail.com", // sender address
@@ -311,21 +318,32 @@ module.exports.forgotPassword = async function(req,res){
 
 
 module.exports.resetPassword = async function(req,res){
-    const encryptedId = req.params.hash;
+    const token = req.params.hash;
     const {password,confirmPassword} = req.body;
     try{
-        const decryptedId = Crypto.AES.decrypt(hash,process.env.CRYPTO_SECRET);
 
-            let user = await User.findOne(decryptedId).exec();
+        const hash =  CryptoN.createHmac(User.SHA256,process.env.CRYPTO_SECRET).update(token).digest('hex');
+        
+            let user = await User.findOne({resetToken:hash});
+        
+        
             if(user){
+                
+                if(user.resetTokenExpiresAt < Date.now()){
+                    return res
+                    .status(200)
+                    .json({ status:201,message: 'Token has expired please try again!' });
+                }
                 if(password != confirmPassword){
                     return res
                     .status(200)
                     .json({ status:201,message: 'Password and confirm password must be same!' });
                 }
                 let passwordHash = Crypto.SHA256(password);
-               let user = user.update({
+                user = await user.update({
                     password:passwordHash,
+                    resetToken:null,
+                    resetTokenExpiresAt:null
                 }).exec();
                 if(user){
                     return res
@@ -336,7 +354,7 @@ module.exports.resetPassword = async function(req,res){
             }
                 return res
                 .status(200)
-                .json({ status:201,message: 'Something went wrong please try again after some time!' });
+                .json({ status:201,message: 'Invalid Hash'});
             
             
     }catch(err){

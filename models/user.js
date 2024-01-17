@@ -1,8 +1,13 @@
+
 const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
+const crypto = require('crypto');
 const MANUAL="MANUAL";
 const GOOGLE="GOOGLE";
+const SHA256="sha-256";
+
+
 
 const userSchema = new mongoose.Schema(
     {
@@ -56,9 +61,13 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum:['MANUAL','GOOGLE']
         },
-        randomHash:{
+        resetToken:{
             type:String,
+        },
+        resetTokenExpiresAt:{
+            type:Number
         }
+
     },
     {
         timestamps: true
@@ -75,9 +84,21 @@ userSchema.statics.storage = multer.diskStorage({
         cb(null, file.fieldname + "-" + uniqueSuffix + ".jpg");
     }
 });
+
+userSchema.methods.generateResetToken =async function(){
+    const randomToken = crypto.randomBytes(32).toString('hex');
+    const token =  crypto.createHmac(SHA256,process.env.CRYPTO_SECRET).update(randomToken).digest('hex');
+    this.set({resetToken:token,resetTokenExpiresAt:(Date.now()+(Number)(process.env.RESET_TOKEN_EXPIRES))});
+
+    return randomToken;
+}
+
 const User = mongoose.model("User", userSchema);
+
 
 module.exports = User;
 module.exports.MANUAL = MANUAL;
 
 module.exports.GOOGLE = GOOGLE ;
+
+module.exports.SHA256 = SHA256;
