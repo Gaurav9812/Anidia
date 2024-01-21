@@ -54,7 +54,10 @@ const userSchema = new mongoose.Schema(
                 this.signUpFrom == MANUAL
             }
         },
-        avtar: {
+        profilePhoto: {
+            type: String
+        },
+        coverPhoto: {
             type: String
         },
         signUpFrom :{

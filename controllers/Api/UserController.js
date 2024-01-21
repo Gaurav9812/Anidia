@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const transporter = require("../../config/nodemailer-config");
 const CryptoN = require("crypto");
-const { utimes } = require("fs");
+
 
 
 module.exports.signUp = function (req, res) {
@@ -64,7 +64,7 @@ module.exports.logIn = async function (req, res) {
                     algorithm: "HS256",
                     expiresIn: 60 * 60
                 });
-                console.error(user);
+                
                 return res.status(200).json({
                     message: "User Added",
                     user: user,
@@ -120,7 +120,11 @@ module.exports.createSessionUsingToken = async (req, res) => {
     }
 };
 
-module.exports.getUser = async function (req, res) {};
+module.exports.getUser = async function (req, res) {
+    return res.status(200).json({
+        message: "User created successfully"
+    });
+};
 
 module.exports.createUser = async function (req, res) {
     const {
