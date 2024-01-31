@@ -8,9 +8,19 @@ opts.secretOrKey = 'authentication';
 opts.algorithms=['HS256'];
 // opts.issuer = 'accounts.examplesoft.com';
 // opts.audience = 'yoursite.net';
-passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
+passport.use(new JwtStrategy(opts, async function(jwt_payload, done) {
     
-    User.findOne({id: jwt_payload.sub}, function(err, user) {
+    try{
+            let user = await User.findById(jwt_payload.id);
+            if(user){
+                return done(null, user);
+            }
+    }catch(err){
+
+    }
+    return done(null, false);
+    User.findOne({_id: jwt_payload.id}, function(err, user) {
+        console.log(jwt_payload);
         if (err) {
             return done(err, false);
         }

@@ -60,6 +60,12 @@ const userSchema = new mongoose.Schema(
         coverPhoto: {
             type: String
         },
+        bio:{
+            type:String
+        },
+        skills:{
+            type:[String]
+        },
         signUpFrom :{
             type: String,
             enum:['MANUAL','GOOGLE']
@@ -78,15 +84,28 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.statics.storage = multer.diskStorage({
+
     destination: function (req, file, cb) {
-        console.log("hea");
-        cb(null, path.join(__dirname + "/../uploads/users/avtars"));
+        cb(null, path.join(__dirname + `/../uploads/users/${file.fieldname}`));
     },
     filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        cb(null, file.fieldname + "-" + uniqueSuffix + ".jpg");
+        let ext = extractExtension(file.originalname)
+        const uniqueSuffix = Date.now() + "_" + Math.round(Math.random() * 1e9);
+        cb(null, req.user.name.firstName+"_"+file.fieldname + "_" + uniqueSuffix +`.${ext}`);
     }
 });
+
+userSchema.statics.memoryStorage = multer.memoryStorage();
+
+userSchema.methods.createFileName = function({fieldName,mimetype}){
+    const uniqueSuffix = Date.now() ;
+    return this.name.firstName+'_'+fieldName+'_'+uniqueSuffix+'.'+extractExtension(mimetype,'/');
+}
+
+function extractExtension(name,seperator){
+    return name.split(seperator).pop();
+}
+
 
 userSchema.methods.generateResetToken =async function(){
     const randomToken = crypto.randomBytes(32).toString('hex');

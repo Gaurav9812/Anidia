@@ -7,7 +7,6 @@ const bodyParser = require("body-parser");
 const expressLayouts = require("express-ejs-layouts");
 const db = require("./config/mongoose");
 const passport = require("passport");
-const multer = require('multer');
 const LocalStrategy = require("passport-local");
 const Strategy = require("./config/passport-local-strategy");
 const StrategyJwt = require("./config/passport-jwt-strategy");
@@ -46,7 +45,7 @@ app.use(
         })
     })
 );
-console.log("sad");
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(passport.setAuthenticatedUser);

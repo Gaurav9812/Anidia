@@ -47,16 +47,17 @@ module.exports.logIn = async function (req, res) {
         let user = await User.findOne({ email: email }).exec();
         if (!user) {
             user = await User.create({
-                username: email,
+                username: email.split('@')[0],
                 name: {
                     firstName: first_name,
                     lastName: family_name
                 },
-                avtar: picture,
+                profilePhoto: picture,
                 socialMediaUniqueId: id,
                 emailVerified: true,
                 email: email,
-                signUpFrom: User.GOOGLE
+                signUpFrom: User.GOOGLE,
+                profilePhoto:picture
             });
 
             if (user) {
@@ -191,6 +192,7 @@ module.exports.createUser = async function (req, res) {
 
 module.exports.createSession = async function (req, res) {
     const { username, password } = req.body;
+    
     if (username && password) {
         let user = await User.findOne()
             .or([{ username: username }, { email: username }])
