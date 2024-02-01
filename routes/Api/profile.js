@@ -19,5 +19,10 @@ ROUTER.post(
   ProfileController.updateBio
 );
 
+ROUTER.post(
+  "/update-skills",
+  ProfileController.updateBio
+);
+
 
 module.exports = ROUTER;

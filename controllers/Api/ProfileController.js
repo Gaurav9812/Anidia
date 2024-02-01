@@ -83,3 +83,32 @@ module.exports.updateBio=async function (req,res){
   }
 }
 
+module.exports.updateBio=async function (req,res){
+  let user = await User.findById(req.user.id);
+  
+  const {skills} = req.body;
+  
+  if(user ){
+      
+     try{
+      
+      user.skills = skills;
+      user = await user.save();
+      
+      
+      return res.status(200).json({
+          status:200,
+          user:user,
+          message:'skills updated',
+      })
+     }catch(err){
+      
+          return res.status(200).json({
+              status:500,
+              message:err.message
+          })
+     }
+      
+  }
+}
+
