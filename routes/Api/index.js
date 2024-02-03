@@ -10,8 +10,10 @@ ROUTER.use("/user", require("./user"));
 
 ROUTER.use("/profile",passport.authenticate('jwt',{session:false,failureMessage:true,failureRedirect:'/api/auth-failed'}),require('./profile'));
 
+ROUTER.use("/post",passport.authenticate('jwt',{session:false,failureMessage:true,failureRedirect:'/api/auth-failed'}),require('./post'));
+
 ROUTER.get('/auth-failed',function(req,res){
-  console.log(req);
+
   return res.status(200).json({
     status:401,
     message:"You are unauthorized"
