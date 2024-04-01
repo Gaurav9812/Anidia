@@ -14,4 +14,9 @@ ROUTER.post(
     PostConroller.AddPost
 );
 
+ROUTER.get(
+  "/get-post/:userId",
+  PostConroller.GetPost
+);
+
 module.exports = ROUTER;
